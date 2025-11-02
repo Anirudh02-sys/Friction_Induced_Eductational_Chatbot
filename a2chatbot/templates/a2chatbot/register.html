@@ -1,19 +1,54 @@
-<h2>Mutation Tutor Helper</h2>
-<p>This tutor is specifically focused on helping you reason about mutations.</p>
+{% extends "a2chatbot/base.html" %}
+{% load static %}
 
-<form method="POST">
-    {% csrf_token %}
+{% block content %}
 
-    <label>Username</label><br>
-    <input type="text" name="username" required><br><br>
+<div class="col-sm-12">
+    <br>
+    <h2>Mutation Tutor Helper</h2>
+    <p>This tutor is specifically focused on helping you reason about mutations.</p>
+    <br>
 
-    <label>Password</label><br>
-    <input type="password" name="password" required><br><br>
+    <h4>Please create an account</h4>
+    <br>
 
-    <label>How well do you understand the concept "Mutation"?</label><br>
-    <label><input type="radio" name="level" value="beginner" required> I don’t know what mutation is</label><br>
-    <label><input type="radio" name="level" value="intermediate"> I kind of know the idea</label><br>
-    <label><input type="radio" name="level" value="advanced"> I understand it well</label><br><br>
+    <form method="POST" action="{% url 'register' %}">
+        {% csrf_token %}
 
-    <button type="submit">Start Learning</button>
-</form>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" class="form-control" name="username" required>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" class="form-control" name="password" required>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label>How well do you understand the concept "Mutation"?</label><br>
+
+            <label>
+                <input type="radio" name="level" value="beginner" required> 
+                I don’t know what mutation is
+            </label><br>
+
+            <label>
+                <input type="radio" name="level" value="intermediate">
+                I kind of know the idea
+            </label><br>
+
+            <label>
+                <input type="radio" name="level" value="advanced">
+                I understand it well
+            </label><br>
+        </div>
+        <br>
+
+        <input type="submit" class="btn main" value="Start Learning">
+    </form>
+</div>
+
+{% endblock %}
