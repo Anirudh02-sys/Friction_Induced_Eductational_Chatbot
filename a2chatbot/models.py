@@ -8,9 +8,12 @@ from django.utils import timezone
 
 class Participant(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete = models.CASCADE, primary_key=True)
+    level = models.CharField(max_length=30, default="beginner")  # beginner / intermediate / advanced
     updated_at = models.DateTimeField(auto_now = True, blank = True)
     def __unicode__(self):
         return 'id='+ str(self.pk)
+
+
 
 class Assistant(models.Model):
     assistant_id = models.TextField(verbose_name = "Assistant ID")

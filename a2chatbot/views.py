@@ -94,6 +94,21 @@ def sendmessage(request):
 		return HttpResponse(response, 'application/javascript')
 
 
+def register(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        level = request.POST.get("level")   # <--- we read level directly
+
+        user = User.objects.create_user(username=username, password=password)
+        participant = Participant.objects.create(user=user, level=level)
+
+        login(request, user)
+        return redirect('home')  # you already have home()
+
+    return render(request, 'a2chatbot/register.html')
+
+
 def initialize_assistant():
 	assistant = client.beta.assistants.create(
     name="Middle school teacher",
