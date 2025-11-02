@@ -1,0 +1,208 @@
+Ever since I was a kid, I have been curious about mutations.
+0:08
+I think certain movies may have had an impact; I used to imagine mutations with amazing abilities.
+0:13
+But, there was also a lot I didn’t understand.
+0:17
+Let me explain.
+0:18
+Many people understand that a mutation is a change of genetic material---more specifically
+0:24
+a change within a nucleic acid.
+0:27
+RNA and DNA are both types of nucleic acids.
+0:30
+Therefore, anything with RNA or DNA can have a mutation.
+0:34
+That means animals- and that definitely includes humans- also plants, fungi, protists, bacteria,
+0:40
+Archeaa- they can all have mutations.
+0:43
+Additionally, so can viruses.
+Neutral mutations
+0:46
+Many mutations can be neutral in effect.
+0:48
+You can see this codon codes for the amino acid leucine.
+0:52
+But if it experiences this particular silent mutation, even though a base has been altered,
+0:58
+it still codes for leucine.
+1:00
+It did not change the amino acid.
+1:03
+Mutations can also be harmful or helpful.
+1:06
+But it’s important to understand that mutations are random.
+1:09
+The organism can’t “will” itself to get a certain mutation.
+1:13
+You can learn more about this in our natural selection video where we talk about how a
+1:17
+bacterium may already possess a helpful mutation that allows it to survive an antibiotic, but
+1:24
+the bacterium didn’t “will” itself to mutate to get this certain mutation.
+1:29
+Ok, so again, mutations are random.
+1:32
+But there can be factors that can make mutations more likely to occur.
+1:36
+External factors like certain types of chemicals or excessive radiation or internal factors
+1:42
+like an event that causes a problem with DNA replication in interphase.
+1:48
+During interphase, cells can replicate DNA before they divide.
+1:52
+So let’s discuss some different types of mutations.
+Gene mutations
+1:56
+We’ll start with gene mutations.
+1:58
+DNA makes up genes and genes can code for proteins that influence different traits.
+2:03
+So when a mutation in DNA happens, which specifically means a change in one or more DNA bases, then
+2:09
+different proteins can be produced which can affect an organism’s traits.
+2:14
+In this example, we have fruit fly DNA.
+2:17
+Mutations could include substitution which means the wrong base is matched.
+2:21
+Insertion, which means an extra base (or bases) are added in.
+2:26
+There is also deletion, which means a base is removed.
+2:29
+Insertions and deletions have the potential to be especially dangerous.
+2:34
+Why?
+2:35
+Remember in protein synthesis, how we talked about how bases are read in threes?
+2:39
+Well if you add a base or remove a base, suddenly the number of bases total has changed.
+2:46
+And if you read the bases in threes---depending on where it happened---- everything that is
+2:51
+read afterwards could be affected.
+2:54
+We call this a frameshift mutation.
+2:57
+If you look at this frameshift example here where a single base has been inserted, you
+3:01
+can see now how the following codons---which have 3 bases each---are now all affected as
+3:06
+the reading frame has been shifted.
+3:08
+This example shows how it can lead to many amino acid changes.
+Chromosome mutations
+3:13
+There are also chromosomal mutations.
+3:15
+Remember that chromosomes are made up of DNA and protein----highly organized---and they
+3:20
+have lots of genes on them.
+3:22
+The human chromosome number is 46 with 23 from an egg cell and 23 from a sperm cell.
+3:28
+This type of fruit fly here, however, has 8 chromosomes so 4 came from an egg cell and
+3:33
+4 came from a sperm cell.
+3:35
+Some examples of chromosomal mutations include duplication, where extra copies of genes are
+3:41
+generated.
+3:42
+Deletion, where some of the genetic material breaks off.
+3:46
+Inversion, when a broken chromosome segment gets inversed (which means reversed) and put
+3:51
+back on the chromosome.
+3:53
+Or translocation when a fragment from one chromosome breaks off and attaches to another
+3:59
+chromosome.
+4:00
+There’s more mutations than what we covered of course, but the idea is that there are
+4:04
+many different kinds of changes that can happen.
+4:06
+If a mutation is going to happen, we already mentioned that there are especially vulnerable
+4:12
+times such as during DNA replication but also there are other times too…like meiosis.
+4:18
+In fruit flies and other animals, meiosis makes sperm and egg cells that can have half
+4:24
+the number of chromosomes as the organism.
+4:26
+However, sometimes those chromosomes don’t separate completely.
+4:31
+We call this nondisjunction.
+4:33
+This can result in an egg or sperm cell that has too many or too few chromosomes.
+4:38
+It’s possible for a mutation to be passed down to an offspring.
+4:43
+Consider a protist with a mutation.
+4:46
+Many protists reproduce asexually, and when they divide, the daughter cell can inherit
+4:50
+the same mutation.
+4:52
+A fruit fly, which reproduces sexually, can pass a mutation to its offspring if that mutation
+4:58
+is found in the genetic material of the sperm or egg cell.
+5:01
+You may wonder why we’ve been mentioning fruit flies so much?
+5:05
+Well, they’re AWESOME.
+5:06
+But, also, it turns out that fruit fly mutations---and how they are inherited---are frequently studied.
+5:12
+We have some links in the video description for more info.
+5:15
+These studied mutations can also occur in humans, and we’ll give a gene mutation example
+5:20
+of a substitution in the case of sickle cell anemia.
+Human mutations
+5:24
+First- a little background.
+5:26
+Hemoglobin is a protein in your red blood cells that helps you carry oxygen.
+5:30
+But in the disorder sickle cell anemia, the gene that codes for hemoglobin is mutated.
+5:35
+If you inherit two copies of this gene (one from each parent), you can have this disorder.
+5:41
+This disorder can make it difficult for your red blood cells to carry oxygen because the
+5:46
+shape of the red blood cell is affected from this mutated hemoglobin protein.
+5:51
+This can lead to anemia and other problems.
+5:54
+While unfortunately there is not a cure for this disorder yet, the good news is that treatment
+5:59
+for this disorder has greatly improved.
+6:03
+Another thing to mention, if an individual only inherits one copy of the mutated gene
+6:08
+from one parent, they are a carrier but they don’t officially have the disease.
+6:13
+Usually they do not have symptoms.
+6:15
+But those that are carriers appear to have a protective factor against malaria.
+6:21
+Malaria is a disease caused by a protist that can be transmitted by mosquitoes.
+6:27
+These individuals can still get malaria, but their symptoms are often less severe.
+6:33
+We should mention that studying mutations and genetic disorders is a large and important
+6:38
+field right now.
+6:40
+Genetic counselors work to help families that may be affected by genetic disorders.
+6:43
+If you have an interest in learning more about careers related to this topic, please check
+6:49
+out some of our further reading suggestions in the description below.
+6:52
+Well, that’s it for The Amoeba Sisters, and we remind you to stay curious.
+
