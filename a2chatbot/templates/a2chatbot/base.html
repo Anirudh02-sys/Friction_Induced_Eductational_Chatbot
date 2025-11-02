@@ -1,0 +1,43 @@
+<!doctype html>
+
+<html>
+    
+    <head>
+    {% load static %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+        <link rel = "stylesheet" href = "{% static 'a2chatbot/a2chatbot.css' %}"  type = "text/css"/>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <title> {% block title %} Chatbot {% endblock %} </title>
+    </head>
+
+    <body>
+        <nav class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="/">Chatbot</a>
+                </div>
+
+                <div class="navbar-right">
+                    {% block user-info %}
+                    {% endblock %}
+                </div>  
+            </div>
+        </nav>
+        {% if message %}
+            <h4 style="color:green">
+                {{message}}
+            </h4>
+        {% endif %}
+ 
+        <div class = "col-sm-12">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </body>
+
+</html>

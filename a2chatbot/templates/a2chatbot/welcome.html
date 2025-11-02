@@ -1,0 +1,84 @@
+{% extends "a2chatbot/base.html" %}
+
+{% load static %}
+
+    {% block user-info %}
+    <div style = "color:white; font-size: 18px; padding-top: 5pt; padding-right: 5pt;">{{user.username}}</div>
+    {% endblock %}
+
+{% block content %}
+    <div class="chat-container">
+        <div id="chatBox" class="chat-box">
+            <!-- Chat messages will appear here -->
+            {{question}}
+        </div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+        
+        function sendMessage(){
+            const inputField = document.getElementById('userInput');
+            const message = inputField.value;
+            const token = getCSRFToken();
+            if (message.trim() === "") return;
+
+            // Append user message
+            appendMessage('user', message);
+            // Clear input field
+            inputField.value = '';
+
+
+            // Simulate bot response
+            // setTimeout(() => {
+            //     const botMessage = "This is a bot response!";
+            //     appendMessage('bot', botMessage);
+            // }, 1000);
+
+
+            $.ajax({
+                url:"sendmessage", 
+                type:"POST",
+                data: {
+                    "message": message,
+                    "csrfmiddlewaretoken": token, 
+                }, 
+                dataType:"json", 
+                success: function(response){
+                    // appendMessage('bot', botMessage);
+                    console.log(response[0].bot_message);
+                    appendMessage('bot', response[0].bot_message);
+                } 
+                });
+        }
+
+        function appendMessage(sender, message) {
+            const chatBox = document.getElementById('chatBox');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
+            messageElement.textContent = message;
+
+            chatBox.appendChild(messageElement);
+
+            // Scroll to the latest message
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+
+function getCSRFToken(){
+    var cookies = document.cookie.split(";");
+    for (var i = 0; i < cookies.length; i++) {
+        if (cookies[i].startsWith("csrftoken=")) {
+            return cookies[i].substring("csrftoken=".length, cookies[i].length);
+        }
+    }
+    return "unknown";
+}
+
+</script>
+
+{% endblock %}
