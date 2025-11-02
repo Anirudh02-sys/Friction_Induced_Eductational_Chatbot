@@ -27,7 +27,6 @@ topic = 'mutation'
 question = "what is mutation?"
 
 
-userid_list = ['student1', 'student2']
 
 @ensure_csrf_cookie
 @login_required
@@ -37,9 +36,9 @@ def home(request):
 	user = request.user
 	participant = get_object_or_404(Participant, user=  user)
 	context['user'] = user
-	print(user.username)
-
-	if not Assistant.objects.filter(user = user).filter(video_name = topic).exists():
+	print(user.username) 
+	# No more filtering by default , Assistants are global now
+	if not Assistant.objects.exists():
 		initialize_assistant()
 	context["question"] = question
 	return render(request, 'a2chatbot/welcome.html', context)
@@ -77,7 +76,9 @@ def sendmessage(request):
     	# ]
 		# )
 
-		assistant = get_object_or_404(Assistant, video_name= topic)
+		participant = Participant.objects.get(user=user)
+		assistant = Assistant.objects.get(level=participant.level)
+
 
 		run = client.beta.threads.runs.create_and_poll(thread_id=thread.id, assistant_id=assistant.assistant_id, temperature=0.7)
 		messages = list(client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id))
@@ -93,6 +94,8 @@ def sendmessage(request):
 		response = json.dumps(response_text)
 		return HttpResponse(response, 'application/javascript')
 
+def landing(request):
+    return render(request, 'a2chatbot/landing.html')
 
 def register(request):
     if request.method == "POST":
@@ -110,22 +113,45 @@ def register(request):
 
 
 def initialize_assistant():
-	assistant = client.beta.assistants.create(
-    name="Middle school teacher",
-    instructions= f"""
-You are a middle school teacher teaching Grades 9-12 who want to assign a learning media video titled "{topic}" to your students for an upcoming science class discussion session. The video transcript is provided as a file search attachment and please review it in its entirety.
-""",
-    model="gpt-4o-mini",
-    temperature=0.7,
-)
-	#vector_store = client.beta.vector_stores.create(name="video transcripts")
+    # if assistants already exist, don't create again
+    if Assistant.objects.exists():
+        return
 
-	#file = client.files.create(
-    #file=open('mutation.txt', 'rb'), purpose='assistants')
-	#file_batch = client.beta.vector_stores.files.create(vector_store_id=vector_store.id, file_id=file.id)
-	assistant = client.beta.assistants.update(assistant_id=assistant.id,)
-	new_assistant = Assistant(video_name = topic, assistant_id = assistant.id, )
-	new_assistant.save()
+    LEVELS = [
+        ("beginner", 
+         "You are supportive and encouraging. Use very simple language. Provide hints in tiny steps."),
+        ("intermediate", 
+         "You are Socratic. Ask probing, clarifying questions. Make the student justify each step."),
+        ("advanced", 
+         "You are challenging. Push for precise definitions. Make them defend their claims scientifically.")
+    ]
+
+    for level, personality_instruction in LEVELS:
+        assistant = client.beta.assistants.create(
+            name=f"Mutation Tutor ({level})",
+            instructions=f"""
+You are a mutation tutor helper.
+Topic focus = "Mutation".
+Personality Mode = {level}
+
+{personality_instruction}
+
+Your job: ask follow-up questions, NOT lectures.
+Use friction-based learning. Keep messages short.
+""",
+            model="gpt-4o-mini",
+            temperature=0.7,
+        )
+
+        Assistant.objects.create(
+            level=level,
+            assistant_id=assistant.id,
+            video_name=topic,
+            vector_store_id=""  # empty for now
+        )
+
+    print("=== created 3 assistants ===")
+
 
 # def delete_agent():
 	# include code to delete the agent
@@ -138,13 +164,7 @@ You are a middle school teacher teaching Grades 9-12 who want to assign a learni
 	# client.beta.vector_stores.delete(vector_store.id)
 	# client.beta.assistants.delete(assistant.id)
 
-def register_new_users():
-	for i in range(len(userid_list)):
-		user= User.objects.create_user(username=userid_list[i], password = userid_list[i])
-		user.save()        
-		participant = Participant(user = user)
-		participant.save()
-	print("new users registered")
+
 
 
 		

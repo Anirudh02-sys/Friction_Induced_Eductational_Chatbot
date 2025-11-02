@@ -23,7 +23,8 @@ import a2chatbot.views as views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("register/", views.register, name="register"),
-    re_path(r'^$', views.home, name ='home'),
+    re_path(r'^$', views.landing, name='landing'),
+    path("home/", views.home, name='home'),
     re_path(r'^login$', auth_views.LoginView.as_view(template_name='a2chatbot/login.html'), name= 'login'),
     re_path(r'^sendmessage$', views.sendmessage, name ='sendmessage'),
 

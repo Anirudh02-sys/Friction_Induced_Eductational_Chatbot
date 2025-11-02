@@ -1,0 +1,18 @@
+{% extends "a2chatbot/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="col-sm-12">
+    <br>
+    <h2>Mutation Tutor Helper</h2>
+    <p>This tutor is designed to improve your understanding of MUTATION using friction-based learning.</p>
+    <br>
+
+    <p>Please login or register to begin.</p>
+
+    <a href="{% url 'login' %}" class="btn main">Login</a>
+    <a href="{% url 'register' %}" class="btn main" style="margin-left:10px;">Register</a>
+</div>
+
+{% endblock %}
