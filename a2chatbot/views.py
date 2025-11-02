@@ -20,6 +20,9 @@ import csv
 import threading
 from dotenv import load_dotenv
 
+from a2chatbot.vectorstore import get_collection, embed_text
+
+
 load_dotenv() 
 # include the api key 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -54,16 +57,16 @@ def sendmessage(request):
 		studentmessage = request.POST["message"]
 		print(studentmessage)
 
-		thread = client.beta.threads.create(
-    		messages=[
-	        {
-	            "role": "user",
-	            "content": f"""To facilitate the student's active learning,
-	                       you asked them an initial open-ended question:"{question}",
-	                       now your goal is to ask a follow-up question based on the studnet's response: "{studentmessage}". Please include the message only and nothing else."""
-	        }
-    	]
-		)
+		# thread = client.beta.threads.create(
+    	# 	messages=[
+	    #     {
+	    #         "role": "user",
+	    #         "content": f"""To facilitate the student's active learning,
+	    #                    you asked them an initial open-ended question:"{question}",
+	    #                    now your goal is to ask a follow-up question based on the studnet's response: "{studentmessage}". Please include the message only and nothing else."""
+	    #     }
+    	# ]
+		# )
 
 		#an alternative thread that specifies that the agent should respond to the student's question 
 
@@ -75,6 +78,40 @@ def sendmessage(request):
 	    #     }
     	# ]
 		# )
+
+		# Custom method to use RAG
+		# retrieve global context from vector db
+		global_coll = get_collection("global_mutation")
+
+		# embed student query
+		query_emb = embed_text([studentmessage])
+
+		# query top 3 chunks
+		results = global_coll.query(query_embeddings=query_emb, n_results=3)
+		context_passages = results['documents'][0] if results['documents'] else []
+		print("RETRIEVED PASSAGES:", context_passages)
+		context_text = "\n\n".join(context_passages)
+
+		prompt = f"""
+		Use the following factual context about mutation to guide your friction question.
+		Do not lecture. Respond with a SHORT follow-up question only.
+
+		Context:
+		{context_text}
+
+		Student said:
+		"{studentmessage}"
+
+		Your job:
+		Ask ONE follow-up question that makes the student think deeper.
+		NO extra explanations.
+		"""
+
+		thread = client.beta.threads.create(
+			messages=[
+				{"role": "user", "content": prompt}
+			]
+		)
 
 		participant = Participant.objects.get(user=user)
 		assistant = Assistant.objects.get(level=participant.level)
@@ -89,7 +126,8 @@ def sendmessage(request):
 		ChatLog.objects.create(
 			user=user,
 			message=studentmessage,
-			bot_reply=message_content.value
+			bot_reply=message_content.value,
+			context = "\n\n".join(context_passages)
 		)
 		response = json.dumps(response_text)
 		return HttpResponse(response, 'application/javascript')

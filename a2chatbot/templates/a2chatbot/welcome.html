@@ -41,7 +41,7 @@
 
 
             $.ajax({
-                url:"sendmessage", 
+                url:"{% url 'sendmessage' %}", 
                 type:"POST",
                 data: {
                     "message": message,

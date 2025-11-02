@@ -34,6 +34,7 @@ class ChatLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
     bot_reply = models.TextField()
+    context = models.TextField(blank=True, null=True) 
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
