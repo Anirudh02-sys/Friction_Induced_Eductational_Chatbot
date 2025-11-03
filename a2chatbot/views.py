@@ -21,7 +21,7 @@ import threading
 from dotenv import load_dotenv
 
 from a2chatbot.vectorstore import get_collection, embed_text
-
+from pydantic import BaseModel
 
 load_dotenv() 
 # include the api key 
@@ -29,108 +29,118 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 topic = 'mutation'
 question = "what is mutation?"
 
+class CategoryExtraction(BaseModel):
+	category: str
+	reasoning: str
 
 
+### HOME
 @ensure_csrf_cookie
 @login_required
 def home(request):
-	print("homehome")
-	context = {}
-	user = request.user
-	participant = get_object_or_404(Participant, user=  user)
-	context['user'] = user
-	print(user.username) 
-	# No more filtering by default , Assistants are global now
-	if not Assistant.objects.exists():
-		initialize_assistant()
-	context["question"] = question
-	return render(request, 'a2chatbot/welcome.html', context)
+    user = request.user
+    participant = get_object_or_404(Participant, user=user)
+    if not Assistant.objects.exists():
+        initialize_assistant()
+    return render(request, "a2chatbot/welcome.html", {"user":user, "question":question})
 
 
+### CATEGORY PARSER
+def get_category(studentmessage: str) -> CategoryExtraction:
+    response = client.responses.parse(
+        model="gpt-4o-mini",
+        input=f"""
+Classify the student's reply about mutation.
+
+Valid categories:
+- ignorance         (no knowledge or no attempt)
+- misconception     (confident but wrong)
+- partial_correct   (some truth but incomplete)
+
+Return JSON fields:
+- category
+- reasoning
+
+Student said: "{studentmessage}"
+""",
+        text_format=CategoryExtraction
+    )
+    return response.output_parsed
+
+
+### RAG PROMPT BUILDER
+def get_rag_prompt(studentmessage):
+    global_coll = get_collection("global_mutation")
+    query_emb = embed_text([studentmessage])
+    results = global_coll.query(query_embeddings=query_emb, n_results=3)
+    context_passages = results['documents'][0] if results['documents'] else []
+    context_text = "\n\n".join(context_passages)
+
+    prompt = f"""
+Use the following scientific facts to guide your friction question.
+Do not lecture. Respond with ONE short follow-up question only.
+
+Context:
+{context_text}
+
+Student said: "{studentmessage}"
+"""
+    return prompt, context_text
+
+
+
+### SEND MESSAGE
 @login_required
 def sendmessage(request):
-	print("sendmessage")
-	user = request.user
-	if request.method == "POST":
-		print(request.POST)
-		context = {}
-		studentmessage = request.POST["message"]
-		print(studentmessage)
+    if request.method == "POST":
+        user = request.user
+        studentmessage = request.POST["message"]
 
-		# thread = client.beta.threads.create(
-    	# 	messages=[
-	    #     {
-	    #         "role": "user",
-	    #         "content": f"""To facilitate the student's active learning,
-	    #                    you asked them an initial open-ended question:"{question}",
-	    #                    now your goal is to ask a follow-up question based on the studnet's response: "{studentmessage}". Please include the message only and nothing else."""
-	    #     }
-    	# ]
-		# )
+        ### STEP 1: categorize student response
+        parsed = get_category(studentmessage)
 
-		#an alternative thread that specifies that the agent should respond to the student's question 
+        if parsed.category == "ignorance":
+            need_rag = False
+        else:
+            need_rag = True
 
-		# thread = client.beta.threads.create(
-    	# 	messages=[
-	    #     {
-	    #         "role": "user",
-	    #         "content": f"""please respond to the students' questions and answers to facilitate their learning. Please stick with the content of this video: "{studentmessage}". Please include the message only and nothing else."""
-	    #     }
-    	# ]
-		# )
+        ### STEP 2: choose prompt
+        if need_rag:
+            prompt, context_text = get_rag_prompt(studentmessage)
+        else:
+            context_text = ""   # no RAG → no context used
+            prompt = f"""
+You are a mutation tutor.
 
-		# Custom method to use RAG
-		# retrieve global context from vector db
-		global_coll = get_collection("global_mutation")
+The student said: "{studentmessage}"
 
-		# embed student query
-		query_emb = embed_text([studentmessage])
+You must ask ONE probing follow-up question to elicit more thinking.
+NO definitions, NO explanations, SHORT question only.
+"""
 
-		# query top 3 chunks
-		results = global_coll.query(query_embeddings=query_emb, n_results=3)
-		context_passages = results['documents'][0] if results['documents'] else []
-		print("RETRIEVED PASSAGES:", context_passages)
-		context_text = "\n\n".join(context_passages)
+        ### STEP 3: get correct assistant for that user
+        participant = Participant.objects.get(user=user)
+        assistant = Assistant.objects.get(level=participant.level)
 
-		prompt = f"""
-		Use the following factual context about mutation to guide your friction question.
-		Do not lecture. Respond with a SHORT follow-up question only.
+        thread = client.beta.threads.create(messages=[{"role":"user","content":prompt}])
+        run = client.beta.threads.runs.create_and_poll(thread_id=thread.id, assistant_id=assistant.assistant_id, temperature=0.7)
+        messages = list(client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id))
+        bot = messages[0].content[0].text.value
 
-		Context:
-		{context_text}
+        ### STEP 4: log whole turn
+        ChatLog.objects.create(
+            user=user,
+            message=studentmessage,
+            bot_reply=bot,
+            context=context_text,
+            meta={
+                "category": parsed.category,
+                "reasoning": parsed.reasoning,
+                "used_rag": need_rag
+            }
+        )
 
-		Student said:
-		"{studentmessage}"
-
-		Your job:
-		Ask ONE follow-up question that makes the student think deeper.
-		NO extra explanations.
-		"""
-
-		thread = client.beta.threads.create(
-			messages=[
-				{"role": "user", "content": prompt}
-			]
-		)
-
-		participant = Participant.objects.get(user=user)
-		assistant = Assistant.objects.get(level=participant.level)
-
-
-		run = client.beta.threads.runs.create_and_poll(thread_id=thread.id, assistant_id=assistant.assistant_id, temperature=0.7)
-		messages = list(client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id))
-		message_content = messages[0].content[0].text
-		print(message_content.value)
-		response_text = []
-		response_text.append({'bot_message':message_content.value})
-		ChatLog.objects.create(
-			user=user,
-			message=studentmessage,
-			bot_reply=message_content.value,
-			context = "\n\n".join(context_passages)
-		)
-		response = json.dumps(response_text)
-		return HttpResponse(response, 'application/javascript')
+        return JsonResponse([{"bot_message":bot}], safe=False)
 
 def landing(request):
     return render(request, 'a2chatbot/landing.html')

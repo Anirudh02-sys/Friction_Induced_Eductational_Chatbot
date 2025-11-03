@@ -7,8 +7,13 @@ from django.utils import timezone
 
 
 class Participant(models.Model):
+    LEVEL_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+    ]
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete = models.CASCADE, primary_key=True)
-    level = models.CharField(max_length=30, default="beginner")  # beginner / intermediate / advanced
+    level = models.CharField(max_length=30, default="beginner",choices=LEVEL_CHOICES)  # beginner / intermediate / advanced
     updated_at = models.DateTimeField(auto_now = True, blank = True)
     def __unicode__(self):
         return 'id='+ str(self.pk)
@@ -34,7 +39,8 @@ class ChatLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
     bot_reply = models.TextField()
-    context = models.TextField(blank=True, null=True) 
+    context = models.TextField(blank=True, null=True)            # retrieved chunks only
+    meta = models.JSONField(default=dict, blank=True, null=True) # category/reasoning/need_rag
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
