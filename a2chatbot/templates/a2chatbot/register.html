@@ -6,32 +6,35 @@
 <div class="col-sm-12">
     <br>
     <h2>Mutation Tutor Helper</h2>
-    <p>This tutor is specifically focused on helping you reason about mutations.</p>
+    <p>This tutor is designed to help you learn about mutations through adaptive questioning.</p>
     <br>
 
-    <h4>Please create an account</h4>
+    <h4>Create Your Account</h4>
     <br>
 
     <form method="POST" action="{% url 'register' %}">
         {% csrf_token %}
 
+        <!-- Username -->
         <div class="form-group">
-            <label>Username</label>
+            <label><strong>Username</strong></label>
             <input type="text" class="form-control" name="username" required>
         </div>
         <br>
 
+        <!-- Password -->
         <div class="form-group">
-            <label>Password</label>
+            <label><strong>Password</strong></label>
             <input type="password" class="form-control" name="password" required>
         </div>
         <br>
 
+        <!-- Level selection -->
         <div class="form-group">
-            <label>How well do you understand the concept "Mutation"?</label><br>
+            <label><strong>How well do you understand the concept “Mutation”?</strong></label><br>
 
             <label>
-                <input type="radio" name="level" value="beginner" required> 
+                <input type="radio" name="level" value="beginner" required>
                 I don’t know what mutation is
             </label><br>
 
@@ -44,6 +47,23 @@
                 <input type="radio" name="level" value="advanced">
                 I understand it well
             </label><br>
+        </div>
+        <br>
+
+        <!-- NEW: Student Summary Input -->
+        <div class="form-group">
+            <label><strong>Before we begin, write a short summary of what YOU remember from the mutation video.</strong></label>
+            <p style="font-size: 13px; color: #666;">
+                This helps the tutor personalize your learning experience.
+                You can write as little or as much as you remember.
+            </p>
+
+            <textarea 
+                class="form-control" 
+                name="summary" 
+                rows="6"
+                placeholder="Example: Mutations are changes in DNA... I think they happen randomly... Not sure about the details."
+                required></textarea>
         </div>
         <br>
 

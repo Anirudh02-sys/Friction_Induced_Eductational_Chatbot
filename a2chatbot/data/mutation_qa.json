@@ -1,0 +1,34 @@
+[
+  {
+    "question": "What is a mutation?",
+    "answer": "A mutation is a change in the nucleic acid sequence (DNA or RNA) of an organism."
+  },
+  {
+    "question": "What organisms are affected by genetic mutations?",
+    "answer": "Any organism with DNA or RNA can have mutations—animals (including humans), plants, fungi, protists, bacteria, archaea, and even viruses."
+  },
+  {
+    "question": "Are the results of mutation good or bad?",
+    "answer": "Mutations can be neutral, harmful, or helpful. Their effect depends on how the DNA change affects the protein produced."
+  },
+  {
+    "question": "What factors can make mutations more likely to occur?",
+    "answer": "External mutagens (like certain chemicals or radiation) and internal events (like errors during DNA replication in interphase) can increase mutation rates."
+  },
+  {
+    "question": "What’s the difference between gene and chromosomal mutations?",
+    "answer": "Gene mutations change DNA bases within a gene, while chromosomal mutations involve larger structural changes to whole chromosomes (like duplication, deletion, inversion, or translocation)."
+  },
+  {
+    "question": "Why are insertions and deletions dangerous?",
+    "answer": "Insertions and deletions can cause a frameshift, which can change many codons downstream and drastically affect the resulting protein."
+  },
+  {
+    "question": "When are mutations most likely to occur?",
+    "answer": "Mutations are especially likely during DNA replication, and also during meiosis when chromosomes separate to make sperm and egg."
+  },
+  {
+    "question": "How can mutations be passed to offspring?",
+    "answer": "Mutations in cells that make gametes (sperm or egg) can be inherited, and asexual organisms pass mutations to daughter cells when they divide."
+  }
+]
