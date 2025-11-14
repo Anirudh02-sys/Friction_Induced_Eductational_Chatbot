@@ -212,6 +212,8 @@
 {% endif %}
 
 <!-- ------------------ JAVASCRIPT ------------------ -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 <script>
 
 function navigateToQuestion(idx) {
@@ -249,7 +251,7 @@ function appendMessage(sender, message) {
     const chatBox = document.getElementById('chatBox');
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', sender);
-    messageElement.textContent = message;
+    messageElement.innerHTML = marked.parse(message);
 
     chatBox.appendChild(messageElement);
     chatBox.scrollTop = chatBox.scrollHeight;
