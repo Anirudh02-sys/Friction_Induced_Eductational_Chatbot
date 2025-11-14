@@ -1,86 +1,222 @@
 {% extends "a2chatbot/base.html" %}
-
 {% load static %}
 
-    {% block user-info %}
-    <div style = "color:white; font-size: 18px; padding-top: 5pt; padding-right: 5pt;">{{user.username}}</div>
-    {% endblock %}
+{% block user-info %}
+<div style="color:white; font-size: 18px; padding-top: 5pt; padding-right: 5pt;">
+    {{ user.username }}
+</div>
+{% endblock %}
 
 {% block content %}
-    <div class="chat-container">
-        <div id="chatBox" class="chat-box">
-            <!-- Chat messages will appear here -->
-            {{question}}
-        </div>
-        <div class="input-container">
-            <input type="text" id="userInput" placeholder="Type a message...">
-            <button onclick="sendMessage()">Send</button>
-            <button onclick="nextQuestion()">Next</button>
-        </div>
+
+<!-- ------------------ CSS STYLING ------------------ -->
+<style>
+    body {
+        margin: 0;
+        font-family: "Inter", sans-serif;
+    }
+
+    .layout-container {
+        display: flex;
+        height: calc(100vh - 60px);
+        background: #f7f7f8;
+    }
+
+    /* Sidebar (ChatGPT style) */
+    .question-sidebar {
+        width: 300px;
+        background: #202123;
+        color: white;
+        padding: 15px;
+        overflow-y: auto;
+    }
+
+    .sidebar-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #ececf1;
+        padding-left: 8px;
+    }
+
+    .question-item {
+        padding: 10px 12px;
+        margin-bottom: 6px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 0.95rem;
+        color: #d1d5db;
+    }
+
+    .question-item:hover {
+        background: #2e2f31;
+    }
+
+    .question-selected {
+        background: #343541;
+        color: #fff;
+        font-weight: 600;
+        border: 1px solid #565869;
+    }
+
+    /* Chat area */
+    .chat-container {
+        flex: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-box {
+        flex: 1;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        overflow-y: scroll;
+        border: 1px solid #ddd;
+    }
+
+    .message {
+        padding: 12px;
+        margin: 8px 0;
+        border-radius: 8px;
+        max-width: 75%;
+        line-height: 1.4;
+    }
+
+    .message.user {
+        background: #3281d4;
+        margin-left: auto;
+    }
+
+    .message.bot {
+        background: #e9e9eb;
+        margin-right: auto;
+    }
+
+    .input-container {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+    }
+
+    input#userInput {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .send-btn {
+        background: #10a37f;
+        color: white;
+    }
+
+    .next-btn {
+        background: #343541;
+        color: white;
+    }
+
+</style>
+
+<!-- ------------------ MAIN LAYOUT ------------------ -->
+<div class="layout-container">
+
+    <!-- ------------------ SIDEBAR WITH QUESTIONS ------------------ -->
+    <div class="question-sidebar">
+        <div class="sidebar-title">📘 Mutation Topics</div>
+
+        {% for q in all_questions %}
+        <div 
+    class="question-item {% if forloop.counter0 == current_index %}question-selected{% endif %}"
+    data-index="{{ forloop.counter0 }}"
+    onclick="navigateToQuestion(this.dataset.index)">
+    {{ forloop.counter }}. {{ q.question }}
     </div>
 
+        {% endfor %}
+    </div>
 
-    <script type="text/javascript">
-        function nextQuestion() {
-            window.location.href = "{% url 'next_question' %}";
+    <!-- ------------------ CHAT AREA ------------------ -->
+    <div class="chat-container">
+
+        <div id="chatBox" class="chat-box">
+            <!-- Current question at top -->
+            <h3><strong>Current Question:</strong></h3>
+            <p>{{ current_question }}</p>
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Type a message...">
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+            <button class="next-btn" onclick="nextQuestion()">Next</button>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ------------------ JAVASCRIPT ------------------ -->
+<script>
+
+function navigateToQuestion(idx) {
+    window.location.href = "/set_question/" + idx + "/";
+}
+
+function nextQuestion() {
+    window.location.href = "{% url 'next_question' %}";
+}
+
+function sendMessage(){
+    const inputField = document.getElementById('userInput');
+    const message = inputField.value.trim();
+    const token = getCSRFToken();
+    if (!message) return;
+
+    appendMessage('user', message);
+    inputField.value = '';
+
+    $.ajax({
+        url:"{% url 'sendmessage' %}",
+        type:"POST",
+        data: {
+            "message": message,
+            "csrfmiddlewaretoken": token,
+        },
+        dataType:"json",
+        success: function(response){
+            appendMessage('bot', response[0].bot_message);
         }
+    });
+}
 
-        function sendMessage(){
-            const inputField = document.getElementById('userInput');
-            const message = inputField.value;
-            const token = getCSRFToken();
-            if (message.trim() === "") return;
+function appendMessage(sender, message) {
+    const chatBox = document.getElementById('chatBox');
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', sender);
+    messageElement.textContent = message;
 
-            // Append user message
-            appendMessage('user', message);
-            // Clear input field
-            inputField.value = '';
-
-
-            // Simulate bot response
-            // setTimeout(() => {
-            //     const botMessage = "This is a bot response!";
-            //     appendMessage('bot', botMessage);
-            // }, 1000);
-
-
-            $.ajax({
-                url:"{% url 'sendmessage' %}", 
-                type:"POST",
-                data: {
-                    "message": message,
-                    "csrfmiddlewaretoken": token, 
-                }, 
-                dataType:"json", 
-                success: function(response){
-                    // appendMessage('bot', botMessage);
-                    console.log(response[0].bot_message);
-                    appendMessage('bot', response[0].bot_message);
-                } 
-                });
-        }
-
-        function appendMessage(sender, message) {
-            const chatBox = document.getElementById('chatBox');
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', sender);
-            messageElement.textContent = message;
-
-            chatBox.appendChild(messageElement);
-
-            // Scroll to the latest message
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 
 function getCSRFToken(){
     var cookies = document.cookie.split(";");
     for (var i = 0; i < cookies.length; i++) {
-        if (cookies[i].startsWith("csrftoken=")) {
-            return cookies[i].substring("csrftoken=".length, cookies[i].length);
+        if (cookies[i].trim().startsWith("csrftoken=")) {
+            return cookies[i].trim().substring("csrftoken=".length);
         }
     }
-    return "unknown";
+    return "";
 }
 
 </script>

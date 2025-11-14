@@ -196,7 +196,9 @@ def home(request):
         "a2chatbot/welcome.html",
         {
             "user": user,
-            "question": main_question,  # show active main question in UI
+            "all_questions": qa,
+            "current_question": main_question,
+            "current_index": idx,
         },
     )
 
@@ -334,4 +336,35 @@ def next_question(request):
     # else remain at last question
 
     participant.save()
+    return redirect("home")
+
+@login_required
+def set_question(request, idx):
+    user = request.user
+    participant = get_or_create_participant(user)
+
+    qa = load_ground_truth()
+
+    # validate index
+    if 0 <= idx < len(qa):
+        participant.current_q_index = idx
+
+        # delete assistant (fresh start per question)
+        if participant.assistant_id:
+            try:
+                client.beta.assistants.delete(participant.assistant_id)
+            except:
+                pass
+            participant.assistant_id = None
+
+        # delete thread
+        if participant.current_thread_id:
+            try:
+                client.beta.threads.delete(participant.current_thread_id)
+            except:
+                pass
+            participant.current_thread_id = None
+
+        participant.save()
+
     return redirect("home")

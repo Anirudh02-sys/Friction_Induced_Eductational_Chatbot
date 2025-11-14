@@ -27,6 +27,8 @@ urlpatterns = [
     path("home/", views.home, name='home'),
     re_path(r'^login$', auth_views.LoginView.as_view(template_name='a2chatbot/login.html'), name= 'login'),
     re_path(r'^sendmessage$', views.sendmessage, name ='sendmessage'),
-     re_path(r"^next_question$", views.next_question, name="next_question"),
+    re_path(r"^next_question$", views.next_question, name="next_question"),
+    path("set_question/<int:idx>/", views.set_question, name="set_question"),
+
 
 ]
