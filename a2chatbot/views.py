@@ -193,7 +193,7 @@ Keep the response SHORT and structured.
         meta={"mode": "student_asks"},
     )
 
-    return JsonResponse([{"bot_message": reply}], safe=False)
+    return JsonResponse([{"bot_message": reply,"rag_context": rag_context}], safe=False)
 
 
 def get_or_create_participant(user):

@@ -242,20 +242,62 @@ function sendMessage(){
         },
         dataType:"json",
         success: function(response){
-            appendMessage('bot', response[0].bot_message);
+            const botMsg = response[0].bot_message;
+            const rag = response[0].rag_context || null;
+            appendMessage('bot', botMsg, rag);
         }
     });
 }
-
-function appendMessage(sender, message) {
+function appendMessage(sender, message, ragContext = null) {
     const chatBox = document.getElementById('chatBox');
+    const wrapper = document.createElement('div');
+
+    // Main bubble (markdown-enabled)
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', sender);
     messageElement.innerHTML = marked.parse(message);
+    wrapper.appendChild(messageElement);
 
-    chatBox.appendChild(messageElement);
+    // RAG Sources only in student mode + only on bot replies
+    if (sender === 'bot' && ragContext) {
+        const container = document.createElement('div');
+        container.style.marginTop = "6px";
+
+        const toggle = document.createElement('div');
+        toggle.style.cursor = "pointer";
+        toggle.style.color = "#0a84ff";
+        toggle.style.fontWeight = "600";
+        toggle.style.marginBottom = "4px";
+        toggle.textContent = "📚 Show Transcript Evidence ▼";
+
+        const contentBox = document.createElement('div');
+        contentBox.style.display = "none";
+        contentBox.style.background = "#f7f7f8";
+        contentBox.style.border = "1px solid #ddd";
+        contentBox.style.borderRadius = "6px";
+        contentBox.style.padding = "10px";
+        contentBox.style.fontSize = "0.85rem";
+        contentBox.style.color = "#333";
+        contentBox.style.whiteSpace = "pre-wrap";
+        contentBox.textContent = formatRAG(ragContext);
+
+        toggle.onclick = () => {
+            const isHidden = contentBox.style.display === "none";
+            contentBox.style.display = isHidden ? "block" : "none";
+            toggle.textContent = isHidden
+                ? "📚 Hide Transcript Evidence ▲"
+                : "📚 Show Transcript Evidence ▼";
+        };
+
+        container.appendChild(toggle);
+        container.appendChild(contentBox);
+        wrapper.appendChild(container);
+    }
+
+    chatBox.appendChild(wrapper);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
+
 
 function getCSRFToken(){
     var cookies = document.cookie.split(";");
@@ -265,6 +307,12 @@ function getCSRFToken(){
         }
     }
     return "";
+}
+
+function formatRAG(text) {
+    // Split into readable bullet lines
+    const lines = text.split("\n").filter(line => line.trim().length > 0);
+    return lines.map(l => "• " + l.trim()).join("\n");
 }
 
 </script>
