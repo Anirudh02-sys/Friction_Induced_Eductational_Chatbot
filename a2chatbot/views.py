@@ -83,7 +83,32 @@ def handle_tutor_mode(request, participant, studentmessage):
         thread_id = participant.current_thread_id
 
     rag_context = get_rag_context(studentmessage)
+    # Step A: Evaluate correctness using the ground truth
+    eval_prompt = f"""
+    Ground truth answer:
+    {ground_truth}
 
+    Student answer:
+    "{studentmessage}"
+
+    Classify the student's answer as one of:
+    1. correct
+    2. partially correct
+    3. incorrect
+    4. idk (if they say 'I don't know')
+
+    Only output the label.
+    """
+
+    eval_resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": eval_prompt}],
+        max_tokens=10
+    )
+
+    print(eval_resp)
+
+    correctness_label = eval_resp.choices[0].message.content.strip().lower()
     user_content = f"""
 Main question: {main_question}
 
@@ -93,12 +118,21 @@ The student said:
 Relevant transcript excerpts:
 {rag_context}
 
+Your evaluation of correctness:
+{correctness_label}
+
+Guidance:
+- If 'correct': reinforce positively and add a very short explanation.
+- If 'partially correct': praise effort, fix misconceptions, ask a follow-up.
+- If 'incorrect': be gentle, break it down, ask a simpler sub-question.
+- If 'idk': give a hint or a multiple-choice follow-up.
+
 ----------------------------------------------
 Your task for THIS turn:
 ----------------------------------------------
-1. Evaluate whether the student is correct, partially correct, or incorrect.
+1. Follow Guidance instructions based on correctness
 2. Provide a short scaffold:
-     - encouragement
+     - encouragement ( DO NOT display this title )
      - mini-hint OR step-by-step clue
      - short explanation (only if needed)
 3. Ask ONE follow-up question:
@@ -128,7 +162,7 @@ Your task for THIS turn:
         message=studentmessage,
         bot_reply=reply,
         context=rag_context,
-        meta={"mode": "tutor_asks", "main_question": main_question},
+        meta={"mode": "tutor_asks", "main_question": main_question,"correctness": correctness_label},
     )
 
     return JsonResponse([{"bot_message": reply}], safe=False)
