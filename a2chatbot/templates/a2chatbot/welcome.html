@@ -22,7 +22,7 @@
         background: #f7f7f8;
     }
 
-    /* Sidebar (ChatGPT style) */
+    /* Sidebar (Tutor Mode Only) */
     .question-sidebar {
         width: 300px;
         background: #202123;
@@ -126,9 +126,20 @@
         color: white;
     }
 
+    /* Student-Asks Mode fullscreen chat */
+    .student-chat-container {
+        flex: 1;
+        padding: 20px;
+        width: 100%;
+    }
 </style>
 
-<!-- ------------------ MAIN LAYOUT ------------------ -->
+<!-- ------------------ TUTOR MODE OR STUDENT MODE ------------------ -->
+
+{% if mode == "tutor_asks" %}
+
+<!-- ======================= TUTOR-ASKS MODE ======================= -->
+
 <div class="layout-container">
 
     <!-- ------------------ SIDEBAR WITH QUESTIONS ------------------ -->
@@ -137,26 +148,30 @@
 
         {% for q in all_questions %}
         <div 
-    class="question-item {% if forloop.counter0 == current_index %}question-selected{% endif %}"
-    data-index="{{ forloop.counter0 }}"
-    onclick="navigateToQuestion(this.dataset.index)">
-    {{ forloop.counter }}. {{ q.question }}
-    </div>
-
+            class="question-item {% if forloop.counter0 == current_index %}question-selected{% endif %}"
+            data-index="{{ forloop.counter0 }}"
+            onclick="navigateToQuestion(this.dataset.index)">
+            {{ forloop.counter }}. {{ q.question }}
+        </div>
         {% endfor %}
     </div>
 
     <!-- ------------------ CHAT AREA ------------------ -->
     <div class="chat-container">
 
+        <div style="margin-bottom: 15px;">
+            <strong>Mode:</strong> Tutor-Asks  
+            &nbsp; | &nbsp;
+            <a href="{% url 'switch_mode' 'student_asks' %}">Switch to Student-Asks Mode</a>
+        </div>
+
         <div id="chatBox" class="chat-box">
-            <!-- Current question at top -->
             <h3><strong>Current Question:</strong></h3>
             <p>{{ current_question }}</p>
         </div>
 
         <div class="input-container">
-            <input type="text" id="userInput" placeholder="Type a message...">
+            <input type="text" id="userInput" placeholder="Type your answer...">
             <button class="send-btn" onclick="sendMessage()">Send</button>
             <button class="next-btn" onclick="nextQuestion()">Next</button>
         </div>
@@ -164,6 +179,37 @@
     </div>
 
 </div>
+
+{% else %}
+
+<!-- ======================= STUDENT-ASKS MODE ======================= -->
+
+<div class="layout-container">
+
+    <!-- NO SIDEBAR HERE -->
+    <div class="student-chat-container">
+
+        <div style="margin-bottom: 15px;">
+            <strong>Mode:</strong> Student-Asks  
+            &nbsp; | &nbsp;
+            <a href="{% url 'switch_mode' 'tutor_asks' %}">Switch to Tutor-Asks Mode</a>
+        </div>
+
+        <h3>🟢 Ask Anything About Mutations</h3>
+        <p>Feel free to ask your own questions. I'll teach you step-by-step.</p>
+
+        <div id="chatBox" class="chat-box"></div>
+
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Ask a question...">
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+
+    </div>
+
+</div>
+
+{% endif %}
 
 <!-- ------------------ JAVASCRIPT ------------------ -->
 <script>

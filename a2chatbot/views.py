@@ -69,6 +69,124 @@ Create a short persona (5–7 sentences) describing:
 
 
 # ---------- Assistant & thread helpers ----------
+def handle_tutor_mode(request, participant, studentmessage):
+    qa = load_ground_truth()
+    idx = max(0, min(participant.current_q_index, len(qa) - 1))
+    main_question = qa[idx]["question"]
+    ground_truth = qa[idx]["answer"]
+
+    assistant_id = ensure_assistant(participant)
+
+    if not participant.current_thread_id:
+        thread_id = start_thread_for_current_question(participant, main_question, ground_truth)
+    else:
+        thread_id = participant.current_thread_id
+
+    rag_context = get_rag_context(studentmessage)
+
+    user_content = f"""
+Main question: {main_question}
+
+Student just said:
+"{studentmessage}"
+
+Relevant context from the mutation transcript (for you to use when helping):
+{rag_context}
+
+Your job:
+- Decide whether to ask a follow-up question, give a hint, or offer a brief explanation.
+- Always stay focused on the main question above.
+- Keep your response short and conversational.
+"""
+    client.beta.threads.messages.create(
+        thread_id=thread_id,
+        role="user",
+        content=user_content
+    )
+
+    run = client.beta.threads.runs.create_and_poll(
+        thread_id=thread_id,
+        assistant_id=assistant_id,
+        temperature=0.7,
+    )
+
+    reply = client.beta.threads.messages.list(
+        thread_id=thread_id,
+        run_id=run.id
+    ).data[0].content[0].text.value
+
+    ChatLog.objects.create(
+        user=request.user,
+        message=studentmessage,
+        bot_reply=reply,
+        context=rag_context,
+        meta={"mode": "tutor_asks", "main_question": main_question},
+    )
+
+    return JsonResponse([{"bot_message": reply}], safe=False)
+
+
+def handle_student_mode(request, participant, studentmessage):
+
+    # 1. Ensure assistant exists (but with student-mode instructions)
+    assistant_id = ensure_student_mode_assistant(participant)
+
+    # 2. Ensure thread exists
+    if not participant.current_thread_id:
+        thread_id = start_student_mode_thread(participant)
+    else:
+        thread_id = participant.current_thread_id
+
+    # 3. Retrieve RAG context
+    rag_context = get_rag_context(studentmessage)
+
+    # 4. Message prompt
+    user_content = f"""
+The student asked:
+"{studentmessage}"
+
+Relevant video transcript:
+{rag_context}
+
+Your teaching goals:
+1. Provide a concise, friendly explanation.
+2. Highlight key terms with **bold**.
+3. Then ask a follow-up question based on their question.
+4. Use either:
+   - a short MCQ, or
+   - fill-in-the-blank.
+5. Encourage the student.
+
+Keep the response SHORT and structured.
+"""
+
+    client.beta.threads.messages.create(
+        thread_id=thread_id,
+        role="user",
+        content=user_content
+    )
+
+    run = client.beta.threads.runs.create_and_poll(
+        thread_id=thread_id,
+        assistant_id=assistant_id,
+        temperature=0.7,
+    )
+
+    reply = client.beta.threads.messages.list(
+        thread_id=thread_id,
+        run_id=run.id
+    ).data[0].content[0].text.value
+
+    ChatLog.objects.create(
+        user=request.user,
+        message=studentmessage,
+        bot_reply=reply,
+        context=rag_context,
+        meta={"mode": "student_asks"},
+    )
+
+    return JsonResponse([{"bot_message": reply}], safe=False)
+
 
 def get_or_create_participant(user):
     """
@@ -122,6 +240,63 @@ def ensure_assistant(participant):
     if participant.assistant_id:
         return participant.assistant_id
     return create_assistant_for_participant(participant)
+
+def ensure_student_mode_assistant(participant):
+
+    # If an assistant exists but mode is different (tutor), delete it
+    if participant.assistant_id and participant.mode != "student_asks":
+        try:
+            client.beta.assistants.delete(participant.assistant_id)
+        except:
+            pass
+        participant.assistant_id = None
+        participant.save()
+
+    # If correct assistant already exists
+    if participant.assistant_id:
+        return participant.assistant_id
+
+    persona = participant.persona or "You are a friendly mutation tutor."
+
+    instructions = f"""
+You are a mutation tutor in STUDENT-ASKS MODE.
+
+Persona:
+{persona}
+
+Behavior:
+- The student freely asks questions.
+- Give concise, helpful explanations.
+- Highlight key terms with **bold**.
+- Follow explanations with:
+    (a) multiple-choice OR
+    (b) fill-in-the-blank.
+- Encourage the student.
+- Keep responses short, friendly, structured.
+"""
+
+    assistant = client.beta.assistants.create(
+        name=f"Mutation Tutor (Student Mode) for {participant.user.username}",
+        instructions=instructions,
+        model="gpt-4o-mini",
+        temperature=0.7,
+    )
+
+    participant.assistant_id = assistant.id
+    participant.save()
+
+    return assistant.id
+
+
+def start_student_mode_thread(participant):
+    thread = client.beta.threads.create(
+        messages=[
+            {"role": "user", "content": "You are now in student-asks mode. Begin teaching."}
+        ]
+    )
+    participant.current_thread_id = thread.id
+    participant.save()
+    return thread.id
 
 
 def start_thread_for_current_question(participant, main_question, ground_truth):
@@ -199,6 +374,7 @@ def home(request):
             "all_questions": qa,
             "current_question": main_question,
             "current_index": idx,
+            "mode": participant.mode,   
         },
     )
 
@@ -209,74 +385,15 @@ def sendmessage(request):
         user = request.user
         participant = get_or_create_participant(user)
 
-        # Load ground truth
-        qa = load_ground_truth()
-        idx = max(0, min(participant.current_q_index, len(qa) - 1))
-        main_question = qa[idx]["question"]
-        ground_truth = qa[idx]["answer"]
-
+        mode = participant.mode
         studentmessage = request.POST["message"]
 
-        # 1) ensure assistant exists
-        assistant_id = ensure_assistant(participant)
-
-        # 2) ensure thread exists for this question
-        if not participant.current_thread_id:
-            thread_id = start_thread_for_current_question(
-                participant,
-                main_question,
-                ground_truth
-            )
+        # Branch on mode
+        if mode == "tutor_asks":
+            return handle_tutor_mode(request, participant, studentmessage)
         else:
-            thread_id = participant.current_thread_id
+            return handle_student_mode(request, participant, studentmessage)
 
-        # 3) RAG context
-        rag_context = get_rag_context(studentmessage)
-
-        # 3) append user message to thread, with RAG context
-        user_content = f"""
-Main question: {main_question}
-
-Student just said:
-"{studentmessage}"
-
-Relevant context from the mutation transcript (for you to use when helping):
-{rag_context}
-
-Your job:
-- Decide whether to ask a follow-up question, give a hint, or offer a brief explanation.
-- Always stay focused on the main question above.
-- Keep your response short and conversational.
-"""
-        client.beta.threads.messages.create(
-            thread_id=thread_id,
-            role="user",
-            content=user_content
-        )
-
-        # 5) run assistant
-        run = client.beta.threads.runs.create_and_poll(
-            thread_id=thread_id,
-            assistant_id=assistant_id,
-            temperature=0.7,
-        )
-
-        messages = client.beta.threads.messages.list(
-            thread_id=thread_id,
-            run_id=run.id
-        )
-
-        bot_reply = messages.data[0].content[0].text.value
-
-        # 6) log turn
-        ChatLog.objects.create(
-            user=user,
-            message=studentmessage,
-            bot_reply=bot_reply,
-            context=rag_context,
-            meta={"main_question": main_question},
-        )
-        return JsonResponse([{"bot_message": bot_reply}], safe=False)
 
 
 def landing(request):
@@ -307,6 +424,30 @@ def register(request):
 
     return render(request, "a2chatbot/register.html")
 
+@login_required
+def switch_mode(request, mode):
+    participant = get_or_create_participant(request.user)
+
+    if mode in ["tutor_asks", "student_asks"]:
+        participant.mode = mode
+        # reset assistant & thread for clean mode switching
+        if participant.assistant_id:
+            try:
+                client.beta.assistants.delete(participant.assistant_id)
+            except:
+                pass
+        participant.assistant_id = None
+
+        if participant.current_thread_id:
+            try:
+                client.beta.threads.delete(participant.current_thread_id)
+            except:
+                pass
+        participant.current_thread_id = None
+
+        participant.save()
+
+    return redirect("home")
 
 @login_required
 def next_question(request):

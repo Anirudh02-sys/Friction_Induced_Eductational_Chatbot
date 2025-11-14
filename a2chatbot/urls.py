@@ -29,6 +29,5 @@ urlpatterns = [
     re_path(r'^sendmessage$', views.sendmessage, name ='sendmessage'),
     re_path(r"^next_question$", views.next_question, name="next_question"),
     path("set_question/<int:idx>/", views.set_question, name="set_question"),
-
-
+    path("switch_mode/<str:mode>/", views.switch_mode, name="switch_mode"),
 ]
