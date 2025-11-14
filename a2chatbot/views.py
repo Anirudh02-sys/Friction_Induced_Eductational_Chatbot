@@ -207,6 +207,7 @@ def sendmessage(request):
         user = request.user
         participant = get_or_create_participant(user)
 
+        # Load ground truth
         qa = load_ground_truth()
         idx = max(0, min(participant.current_q_index, len(qa) - 1))
         main_question = qa[idx]["question"]
@@ -214,11 +215,20 @@ def sendmessage(request):
 
         studentmessage = request.POST["message"]
 
-        # 1) make sure assistant & thread exist
+        # 1) ensure assistant exists
         assistant_id = ensure_assistant(participant)
-        thread_id = get_or_create_thread(participant, main_question, ground_truth)
 
-        # 2) RAG for this turn
+        # 2) ensure thread exists for this question
+        if not participant.current_thread_id:
+            thread_id = start_thread_for_current_question(
+                participant,
+                main_question,
+                ground_truth
+            )
+        else:
+            thread_id = participant.current_thread_id
+
+        # 3) RAG context
         rag_context = get_rag_context(studentmessage)
 
         # 3) append user message to thread, with RAG context
@@ -239,10 +249,10 @@ Your job:
         client.beta.threads.messages.create(
             thread_id=thread_id,
             role="user",
-            content=user_content,
+            content=user_content
         )
 
-        # 4) run assistant
+        # 5) run assistant
         run = client.beta.threads.runs.create_and_poll(
             thread_id=thread_id,
             assistant_id=assistant_id,
@@ -250,22 +260,20 @@ Your job:
         )
 
         messages = client.beta.threads.messages.list(
-            thread_id=thread_id, run_id=run.id
+            thread_id=thread_id,
+            run_id=run.id
         )
 
         bot_reply = messages.data[0].content[0].text.value
 
-        # 5) log turn
+        # 6) log turn
         ChatLog.objects.create(
             user=user,
             message=studentmessage,
             bot_reply=bot_reply,
             context=rag_context,
-            meta={
-                "main_question": main_question,
-            },
+            meta={"main_question": main_question},
         )
-
         return JsonResponse([{"bot_message": bot_reply}], safe=False)
 
 
@@ -289,8 +297,9 @@ def register(request):
             level=level,
             persona=persona_text,
             current_q_index=0,
+            assistant_id = None,
+            current_thread_id=None
         )
-
         login(request, user)
         return redirect("home")
 
@@ -299,15 +308,10 @@ def register(request):
 
 @login_required
 def next_question(request):
-    """
-    Endpoint: called when student clicks "I'm done, next question".
-    - Deletes the current assistant and thread from OpenAI
-    - Advances to the next question
-    """
     user = request.user
     participant = get_or_create_participant(user)
 
-    # Delete assistant if exists
+    # Delete assistant
     if participant.assistant_id:
         try:
             client.beta.assistants.delete(participant.assistant_id)
@@ -315,7 +319,7 @@ def next_question(request):
             print("[WARN] Failed to delete assistant:", e)
         participant.assistant_id = None
 
-    # Delete thread if exists
+    # Delete thread
     if participant.current_thread_id:
         try:
             client.beta.threads.delete(participant.current_thread_id)
@@ -323,11 +327,11 @@ def next_question(request):
             print("[WARN] Failed to delete thread:", e)
         participant.current_thread_id = None
 
-    # Advance question index
+    # Move to next question
     qa = load_ground_truth()
     if participant.current_q_index < len(qa) - 1:
         participant.current_q_index += 1
-    # else: stay at last question
+    # else remain at last question
 
     participant.save()
     return redirect("home")

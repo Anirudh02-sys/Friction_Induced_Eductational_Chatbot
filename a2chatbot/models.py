@@ -29,6 +29,7 @@ class Participant(models.Model):
         max_length=255, blank=True, null=True
     )
     updated_at = models.DateTimeField(auto_now=True, blank=True)
+    #thread_id = models.CharField(max_length=200, null=True, blank=True)
 
     def __unicode__(self):
         return 'id=' + str(self.pk)
